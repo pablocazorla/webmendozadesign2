@@ -1,0 +1,44 @@
+/* Basics *************************/
+body{
+	font-family: 'Open Sans', sans-serif;
+	overflow:hidden;
+	line-height: 1.4em;
+	color:#333;
+}
+
+h1{
+	font-size: 50px;line-height: 1.4em;
+	font-family: 'Roboto Slab', serif;
+	margin-bottom: 12px;
+}
+h2{
+	font-size: 22px;line-height: 1.4em;
+	font-weight: 300;
+}
+h3{
+	font-size: 22px;line-height: 1.4em;
+	font-family: 'Roboto Slab', serif;
+	margin-bottom: 20px;
+}
+
+
+/* App *************************************/
+#app{
+	position: fixed;
+	z-index: 100;
+	top: 0;bottom: 0;left: 0;right: 0;
+	overflow: hidden;
+}
+#app-background{
+	position: fixed;
+	z-index: 99;
+	top: 0;left: 0;
+	display: block;
+}
+
+
+
+
+/* HEADER ******************************/
+.header-main,	
+#menu-list{display: none}
