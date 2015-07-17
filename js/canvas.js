@@ -1,12 +1,59 @@
 // Canvas
 var Canvas = (function() {
 	'use strict';
-	var $window, $canvas, node, c, step = 0,
+	var $window,
+		canvas,
+		c,
+		width,
+		height;
 
-		support = (function() {
+	// UTILS
+	var support = (function() {
 			var elem = document.createElement('canvas');
 			return !!(elem.getContext && elem.getContext('2d'));
-		})();
+		})(),
+		px = function(percent) {
+			return Math.round(width * percent / 100);
+		},
+		setStyle = function(o) {
+			for (var a in o) {
+				if (typeof c[a] != 'undefined') {
+					c[a] = o[a];
+				}
+			}
+		},
+		resetStyle = function(prop) {
+			var p = prop || 'all',
+				o = {
+					'fillStyle': '#000000',
+					'font': '10px sans-serif',
+					'globalAlpha': 1,
+					'globalCompositeOperation': 'source-over',
+					'lineCap': 'butt',
+					'lineDashOffset': 0,
+					'lineJoin': 'miter',
+					'lineWidth': 1,
+					'miterLimit': 10,
+					'shadowBlur': 0,
+					'shadowColor': 'rgba(0, 0, 0, 0)',
+					'shadowOffsetX': 0,
+					'shadowOffsetY': 0,
+					'strokeStyle': '#000000',
+					'textAlign': 'start',
+					'textBaseline': 'alphabetic'
+				};
+			if (typeof o[p] !== 'undefined') {
+				if (typeof c[p] !== 'undefined') {
+					c[p] = o[p];
+				}
+			} else {
+				for (var a in o) {
+					if (typeof c[a] !== 'undefined') {
+						c[a] = o[a];
+					}
+				}
+			}
+		};
 
 	window.requestAnimFrame = (function() {
 		return window.requestAnimationFrame ||
@@ -17,68 +64,15 @@ var Canvas = (function() {
 			};
 	})();
 
-
-	// SPRITE
+	// Sprite
 	var idCounter = 0,
-		setContextStyle = function(o) {
-			for (var a in o) {
-				if (typeof c[a] != 'undefined') {
-					c[a] = o[a];
-				}
-			}
-		},
-		/*
-		 * Shapes
-		 */
-		shapeOptionsDefault = {
-			x: 0,
-			y: 0,
-			fillStyle: '#FFF',
-			strokeStyle: '#000'
-		},
-		shapes = {
-			'circle': function(options) {
-				var o = $.extend(shapeOptionsDefault, {
-					radius: 10
-				}, options);
-				setContextStyle(o);
-			},
-			'rectangle': function(options) {
-				var o = $.extend(shapeOptionsDefault, {
-					width: 100,
-					height: 100
-				}, options);
-				setContextStyle(o);
-				c.beginPath();
-				c.moveTo(o.x, o.y);
-				c.lineTo(o.x + o.width, o.y);
-				c.lineTo(o.x + o.width, o.y + o.height);
-				c.lineTo(o.x, o.y + o.height);
-				c.lineTo(o.x, o.y);
-				c.fill();
-				c.stroke();
-				c.closePath();
-			}
-		},
-		/*
-		 * Sprite Class
-		 */
-		spr = function(shapeFunction, options) {
-			return this.init(shapeFunction, options);
+		spr = function(shapeFunction) {
+			return this.init(shapeFunction);
 		};
-	/*
-	 * Sprite Definition
-	 */
 	spr.prototype = {
-		spriteType: true,
-		init: function(shapeFunction, options) {
+		init: function(shapeFunction) {
 			this.id = 'spr-' + idCounter;
 			idCounter++;
-
-			return this.reset().shape(shapeFunction, options);
-		},
-		reset: function() {
-			this.shp = null;
 			this.x = 0;
 			this.y = 0;
 			this.xScale = 1;
@@ -87,38 +81,24 @@ var Canvas = (function() {
 			this.parent = null;
 			this.childs = [];
 			this.length = 0;
-
+			this.draw(shapeFunction);
 			return this;
 		},
-		shape: function(shapeFunction, options) {
-			var shapeFunction = shapeFunction || function() {};
-
-			if (typeof shapeFunction == 'string') {
-				if (typeof shapes[shapeFunction.toLowerCase()] == 'function') {
-					shapeFunction = shapes[shapeFunction.toLowerCase()];
-				} else {
-					console.log('Sorry, there is not a shape named "' + shapeFunction + '".');
-				}
-			}
-			this.shp = function() {
-				shapeFunction(options);
-			};
+		draw: function(shapeFunction) {
+			this.shapeFunction = shapeFunction || function() {};
 			return this;
 		},
 		append: function(sprite) {
-
 			if (sprite.parent != null) {
 				sprite.parent.detach(sprite);
 			}
 			this.childs.push(sprite);
 			this.length++;
 			sprite.parent = this;
-
 			return this;
 		},
 		appendTo: function(spriteOrCanvas) {
 			spriteOrCanvas.append(this);
-
 			return this;
 		},
 		detach: function(sprite) {
@@ -129,18 +109,17 @@ var Canvas = (function() {
 					this.length--;
 				}
 			}
-
 			return this;
 		},
 		render: function() {
 			var rotRadians = this.rotation * Math.PI / 180;
 			// Set Coordinates
-			c.translate(this.x, this.y);
+			c.translate(px(this.x), px(this.y));
 			c.rotate(rotRadians);
 			c.scale(this.xScale, this.yScale);
 
 			// Render
-			this.shp();
+			this.shapeFunction();
 
 			// Render Childs
 			for (var i = 0; i < this.length; i++) {
@@ -156,19 +135,24 @@ var Canvas = (function() {
 		}
 	};
 
-
-
+	// Canvas
 	return {
 		support: support,
-		init: function() {
+		init: function(id) {
 			$window = $(window);
-			$canvas = $('#app-background');
-			node = $canvas[0];
-			c = node.getContext('2d');
+			canvas = document.getElementById(id);
+			c = canvas.getContext('2d');
 			this.childs = [];
 			this.length = 0;
-
 			var self = this;
+			var updateSize = function() {
+				canvas.width = width = $window.width();
+				canvas.height = height = $window.height();				
+			};
+			updateSize();
+			$window.resize(updateSize);
+
+			
 			(function animloop() {
 				requestAnimFrame(animloop);
 				self.render();
@@ -186,27 +170,58 @@ var Canvas = (function() {
 			return this;
 		},
 		detach: function(sprite) {
-			if (typeof sprite.spriteType != 'undefined') {
-				for (var i = 0; i < this.length; i++) {
-					if (this.childs[i].id == sprite.id) {
-						sprite.parent = null;
-						this.childs.splice(i, 1);
-						this.length--;
-					}
+			for (var i = 0; i < this.length; i++) {
+				if (this.childs[i].id == sprite.id) {
+					sprite.parent = null;
+					this.childs.splice(i, 1);
+					this.length--;
 				}
 			}
 			return this;
 		},
-		render: function() {
+		clear:function(){
 			c.setTransform(1, 0, 0, 1, 0, 0);
-			c.clearRect(0, 0, node.width, node.height);
+			c.clearRect(0, 0, width, height);
+		},
+		render: function() {
+			this.clear();
 			for (var i = 0; i < this.length; i++) {
 				c.setTransform(1, 0, 0, 1, 0, 0);
 				this.childs[i].render();
 			}
 		},
-		Sprite: function(shapeFunction, options) {
-			return new spr(shapeFunction, options);
+		Sprite: function(shapeFunction) {
+			return new spr(shapeFunction);
+		},
+		shape: {
+			circle: function(op) {
+				var cfg = $.extend({
+					x: 0,
+					y: 0,
+					radius: 1,
+					style: {}
+				}, op);
+				return function() {
+					setStyle(cfg.style);
+					c.beginPath();
+					c.arc(px(cfg.x), px(cfg.y), px(cfg.radius), 0, Math.PI * 2);
+					c.fill();
+					c.stroke();
+					c.closePath();
+				}
+			},
+			rectangle:function(){
+				var cfg = $.extend({
+					x: 0,
+					y: 0,
+					width: 1,
+					height: 1,
+					style: {}
+				}, op);
+				return function() {
+
+				}
+			}
 		}
-	}
+	};
 })();

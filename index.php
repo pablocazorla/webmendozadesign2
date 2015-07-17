@@ -35,11 +35,11 @@
 	</div>	
 	
 	<div id="app">
-		<h1>Content</h1>
+		<h2 id="scro"></h2>
 	</div>
 	<canvas id="app-background" width="2000" height="1400"></canvas>
 
 	<script src="js/libs/jquery-1.11.2.min.js"></script>
-	<script type="text/javascript" src="min/packer.php?type=js&path=js&files=observable,canvas,actor,app"></script>
+	<script type="text/javascript" src="min/packer.php?type=js&path=js&files=observable,canvas,actor,timeline,app"></script>
 </body>
 </html>
